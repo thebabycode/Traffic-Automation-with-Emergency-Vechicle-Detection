@@ -1,17 +1,22 @@
 import serial
-#arduino = serial.Serial(port="COM23", baudrate="115200", timeout=.1)
 import torch
 import cv2
 
 
 class MugDetection:
 
-    def __init__(self, capture_index, model_name):
+    def __init__(self, capture_index, capture_index2, capture_index3, model_name):
+
         self.capture_index = capture_index
+        self.capture_index2 = capture_index2
+        self.capture_index3 = capture_index3
+
         self.model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_name, force_reload=True)
         self.classes = self.model.names
         print("classes = ", self.classes)
         self.device = 'cpu'
+        # self.arduino = serial.Serial(port="COM23", baudrate="115200", timeout=.1)
+        # self.arduino.write(bytes("hello arduino inside innit", 'utf-8'))
 
     def score_frame(self, frame):
         self.model.to(self.device)
@@ -41,6 +46,11 @@ class MugDetection:
     def __call__(self):
         cap = cv2.VideoCapture(self.capture_index)
         assert cap.isOpened()
+        cap2 = cv2.VideoCapture(self.capture_index2)
+        assert cap2.isOpened()
+        cap3 = cv2.VideoCapture(self.capture_index3)
+        assert cap3.isOpened()
+        #self.arduino.write(bytes("hello", 'utf-8'))
         while True:
             ret, frame = cap.read()
             frame = cv2.resize(frame, (500, 500))  # resize the output window
@@ -48,11 +58,23 @@ class MugDetection:
             frame = self.plot_boxes(results, frame)
             cv2.imshow('ROAD 1 Detection', frame)
 
+            ret, frame2 = cap2.read()
+            frame2 = cv2.resize(frame2, (500, 500))  # resize the output window
+            results2 = self.score_frame(frame2)
+            frame2 = self.plot_boxes(results2, frame2)
+            cv2.imshow('ROAD 2 Detection', frame2)
+
+            ret, frame3 = cap3.read()
+            frame3 = cv2.resize(frame3, (500, 500))  # resize the output window
+            results3 = self.score_frame(frame3)
+            frame3 = self.plot_boxes(results3, frame3)
+            cv2.imshow('ROAD 3 Detection', frame3)
+
             if cv2.waitKey(5) & 0xFF == 27:
                 break
         cap.release()
 
 
 # Create a new object and execute.
-detector = MugDetection(capture_index='video1.mp4', model_name='best.pt')
+detector = MugDetection(capture_index='video2.mp4', capture_index2="video3.mp4", capture_index3="video4.mp4", model_name='best.pt')
 detector()
